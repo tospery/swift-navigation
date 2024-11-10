@@ -2,7 +2,7 @@
   import IssueReporting
   @_spi(Internals) import SwiftNavigation
   import UIKit
-  import UIKitNavigationShim
+  @_implementationOnly import UIKitNavigationShim
 
   extension UIViewController {
     /// Presents a view controller modally when a binding to a Boolean value you provide is true.
@@ -20,7 +20,7 @@
       isPresented: UIBinding<Bool>,
       onDismiss: (() -> Void)? = nil,
       content: @escaping () -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       present(item: isPresented.toOptionalUnit, onDismiss: onDismiss) { _ in content() }
     }
 
@@ -42,7 +42,7 @@
       item: UIBinding<Item?>,
       onDismiss: (() -> Void)? = nil,
       content: @escaping (Item) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       present(item: item, id: \.id, onDismiss: onDismiss, content: content)
     }
 
@@ -65,7 +65,7 @@
       item: UIBinding<Item?>,
       onDismiss: (() -> Void)? = nil,
       content: @escaping (UIBinding<Item>) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       present(item: item, id: \.id, onDismiss: onDismiss, content: content)
     }
 
@@ -89,7 +89,7 @@
       id: KeyPath<Item, ID>,
       onDismiss: (() -> Void)? = nil,
       content: @escaping (Item) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       present(item: item, id: id, onDismiss: onDismiss) {
         content($0.wrappedValue)
       }
@@ -116,7 +116,7 @@
       id: KeyPath<Item, ID>,
       onDismiss: (() -> Void)? = nil,
       content: @escaping (UIBinding<Item>) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       destination(item: item, id: id) { $item in
         content($item)
       } present: { [weak self] child, transaction in
@@ -150,7 +150,7 @@
     public func navigationDestination(
       isPresented: UIBinding<Bool>,
       content: @escaping () -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       navigationDestination(item: isPresented.toOptionalUnit) { _ in content() }
     }
 
@@ -169,7 +169,7 @@
     public func navigationDestination<Item>(
       item: UIBinding<Item?>,
       content: @escaping (Item) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       navigationDestination(item: item) {
         content($0.wrappedValue)
       }
@@ -191,7 +191,7 @@
     public func navigationDestination<Item>(
       item: UIBinding<Item?>,
       content: @escaping (UIBinding<Item>) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       destination(item: item) { $item in
         content($item)
       } present: { [weak self] child, transaction in
@@ -246,7 +246,7 @@
         _ child: UIViewController,
         _ transaction: UITransaction
       ) -> Void
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       destination(
         item: isPresented.toOptionalUnit,
         content: { _ in content() },
@@ -257,7 +257,7 @@
 
     /// Presents a view controller using the given item as a data source for its content.
     ///
-    /// This helper powers ``navigationDestination(item:content:)-367r6`` and can be used to define
+    /// This helper powers ``navigationDestination(item:content:)-1gks3`` and can be used to define
     /// custom transitions.
     ///
     /// - Parameters:
@@ -276,7 +276,7 @@
         _ child: UIViewController,
         _ transaction: UITransaction
       ) -> Void
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       destination(
         item: item,
         id: { _ in nil },
@@ -288,7 +288,7 @@
 
     /// Presents a view controller using the given item as a data source for its content.
     ///
-    /// This helper powers ``present(item:onDismiss:content:)-34iup`` and can be used to define
+    /// This helper powers ``present(item:onDismiss:content:)-4m7m3`` and can be used to define
     /// custom transitions.
     ///
     /// - Parameters:
@@ -314,7 +314,7 @@
         _ child: UIViewController,
         _ transaction: UITransaction
       ) -> Void
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       destination(
         item: item,
         id: { $0[keyPath: id] },
@@ -336,7 +336,7 @@
         _ child: UIViewController,
         _ transaction: UITransaction
       ) -> Void
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       let key = UIBindingIdentifier(item)
       return observe { [weak self] transaction in
         guard let self else { return }
@@ -356,7 +356,7 @@
               item.wrappedValue = nil
             }
           }
-          childController.onDismiss = onDismiss
+          childController._UIKitNavigation_onDismiss = onDismiss
           if #available(iOS 17, macOS 14, tvOS 17, watchOS 10, *) {
             childController.traitOverrides.dismiss = UIDismissAction { _ in
               onDismiss()
@@ -368,10 +368,10 @@
               present(childController, transaction)
             }
           }
-          if hasViewAppeared {
+          if _UIKitNavigation_hasViewAppeared {
             work()
           } else {
-            onViewAppear.append(work)
+            _UIKitNavigation_onViewAppear.append(work)
           }
         } else if let presented = presentedByID[key] {
           if let controller = presented.controller {
@@ -409,7 +409,7 @@
     public func pushViewController(
       isPresented: UIBinding<Bool>,
       content: @escaping () -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       navigationDestination(isPresented: isPresented, content: content)
     }
 
@@ -423,7 +423,7 @@
     public func pushViewController<Item>(
       item: UIBinding<Item?>,
       content: @escaping (Item) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       navigationDestination(item: item, content: content)
     }
 
@@ -438,7 +438,7 @@
     public func pushViewController<Item>(
       item: UIBinding<Item?>,
       content: @escaping (UIBinding<Item>) -> UIViewController
-    ) -> ObservationToken {
+    ) -> ObserveToken {
       navigationDestination(item: item, content: content)
     }
   }
@@ -452,7 +452,8 @@
       //     deinit alongside it on the main thread. If we use this other places we should force it
       //     to be a UIViewController as well, to ensure this functionality.
       MainActor._assumeIsolated {
-        self.controller?.dismiss(animated: false)
+        guard let controller, controller.parent == nil else { return }
+        controller.dismiss(animated: false)
       }
     }
     init(_ controller: UIViewController, id presentationID: AnyHashable? = nil) {

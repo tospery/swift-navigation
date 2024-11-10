@@ -1,4 +1,5 @@
 import UIKitNavigation
+import UIKitNavigationShim
 import XCTest
 
 final class NavigationStackTests: XCTestCase {
@@ -237,7 +238,7 @@ final class NavigationStackTests: XCTestCase {
       ChildViewController(number: number)
     }
     try await setUp(controller: nav)
-    await assertEventuallyEqual(nav.hasViewAppeared, true)
+    await assertEventuallyEqual(nav._UIKitNavigation_hasViewAppeared, true)
 
     withUITransaction(\.uiKit.disablesAnimations, true) {
       path.append(1)
